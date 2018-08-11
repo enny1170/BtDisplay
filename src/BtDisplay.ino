@@ -1,15 +1,55 @@
 #include <wifi.h>
-
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 const char* ssid     = "myMobile";
 const char* password = "VollVergessen!DenScheiss!";
-const char* host = "192.168.43.1";
+const char* url = "http://192.168.43.1:17580/pebble";
+
+const size_t bufferSize = 3*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(10) + 250;
+DynamicJsonBuffer jsonBuffer(bufferSize);
+
+//DynamicJsonBuffer jsonBuffer;
+
+#define LOGO16_GLCD_HEIGHT 16 
+#define LOGO16_GLCD_WIDTH  16 
+static const unsigned char PROGMEM logo16_glcd_bmp[] =
+{ B00000000, B11000000,
+  B00000001, B11000000,
+  B00000001, B11000000,
+  B00000011, B11100000,
+  B11110011, B11100000,
+  B11111110, B11111000,
+  B01111110, B11111111,
+  B00110011, B10011111,
+  B00011111, B11111100,
+  B00001101, B01110000,
+  B00011011, B10100000,
+  B00111111, B11100000,
+  B00111111, B11110000,
+  B01111100, B11110000,
+  B01110000, B01110000,
+  B00000000, B00110000 };
+
+Adafruit_SSD1306 display;
+String line;
+int size=1;
 
 void setup()
 {
     Serial.begin(115200);
-    delay(10);
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 
+    // Clear the buffer.
+    display.clearDisplay();
+
+    display.drawBitmap(30, 16,  logo16_glcd_bmp, 16, 16, 1);
+    display.display();
+    delay(3);
     // We start by connecting to a WiFi network
 
     Serial.println();
@@ -17,61 +57,131 @@ void setup()
     Serial.print("Connecting to ");
     Serial.println(ssid);
 
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setTextWrap(true);
+    display.setCursor(0,0);
+    display.print("Connecting to ");
+    display.print(ssid);
     WiFi.begin(ssid, password);
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
+        display.print(".");
+        display.display();
     }
 
     Serial.println("");
+    display.clearDisplay();
+    display.setCursor(0,2);
+    display.println("WiFi connected");
     Serial.println("WiFi connected");
+    display.println("Ip address:");
     Serial.println("IP address: ");
+    display.println(WiFi.localIP());
     Serial.println(WiFi.localIP());
+    display.display();
+    delay(3000);
+    //display.setTextSize(1);
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
 }
+
 
 void loop()
 {
-    delay(15000);
+
+
 
     // Use WiFiClient class to create TCP connections
     WiFiClient client;
-    const int httpPort = 17580;
-    if (!client.connect(host, httpPort)) {
-        Serial.println("connection failed");
-        return;
-    }
-
-    // We now create a URI for the request
-    String url = "/pebble";
-    //url += streamId;
-    //url += "?private_key=";
-    //url += privateKey;
-    //url += "&value=";
-    //url += value;
-
-    Serial.print("Requesting URL: ");
-    Serial.println(url);
-
-    // This will send the request to the server
-    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-                 "Host: " + host + "\r\n" +
-                 "Connection: close\r\n\r\n");
-    unsigned long timeout = millis();
-    while (client.available() == 0) {
-        if (millis() - timeout > 5000) {
-            Serial.println(">>> Client Timeout !");
-            client.stop();
-            return;
+    HTTPClient http;
+    // get data from Webservice    
+    http.begin(url);
+    int httpCode = http.GET();
+    if (httpCode > 0)
+    {
+        // file found at server
+        if (httpCode == HTTP_CODE_OK)
+        {
+            line = http.getString();
         }
     }
-    
-    // Read all the lines of the reply from server and print them to Serial
-    while(client.available()) {
-        String line = client.readStringUntil('\r');
-        Serial.print(line);
+    else
+    {
+        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        display.clearDisplay();
+        display.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        display.display();
     }
 
-    Serial.println();
-    Serial.println("closing connection");
+    http.end();
+
+JsonObject &root = jsonBuffer.parseObject(line.c_str());
+//root.prettyPrintTo(Serial);
+long status0_now = root["status"][0]["now"]; // 1533992301941
+
+JsonObject& bgs0 = root["bgs"][0];
+const char* bgs0_sgv = bgs0["sgv"]; // "149"
+int bgs0_trend = bgs0["trend"]; // 4
+const char* bgs0_direction = bgs0["direction"]; // "Flat"
+long bgs0_datetime = bgs0["datetime"]; // 1533992094001
+long bgs0_filtered = bgs0["filtered"]; // 116235
+long bgs0_unfiltered = bgs0["unfiltered"]; // 116235
+int bgs0_noise = bgs0["noise"]; // 1
+int bgs0_bgdelta = bgs0["bgdelta"]; // 1
+const char* bgs0_battery = bgs0["battery"]; // "70"
+int bgs0_iob = bgs0["iob"]; // 0
+
+JsonObject& cals0 = root["cals"][0];
+int cals0_scale = cals0["scale"]; // 1
+float cals0_slope = cals0["slope"]; // 1441.0746430702911
+float cals0_intercept = cals0["intercept"]; // -18801.45209007935
+    Serial.println("Json results:");
+    Serial.print("sgv: ");
+    Serial.println(bgs0_sgv);
+    Serial.print("trend: ");
+    Serial.println(bgs0_trend);
+    Serial.print("direction: ");
+    Serial.println(bgs0_direction);
+
+    // Wtite out Data to display
+    display.clearDisplay();
+    display.setTextSize(4);
+    display.setCursor(2,2);
+    display.print(bgs0_sgv);
+    drawArrow(bgs0_trend);
+
+    delay(30000);
+}
+
+
+void drawArrow(int trend)
+{
+    
+    switch (trend)
+    {
+        case 2:
+            break;
+        case 3: 
+            display.drawLine(88,16,123,16,WHITE);
+            display.drawLine(123,16,113,11,WHITE);
+            display.drawLine(123,16,113,21,WHITE);
+            break;
+        case 4: //flat
+            display.drawLine(88,16,123,16,WHITE);
+            display.drawLine(123,16,113,11,WHITE);
+            display.drawLine(123,16,113,21,WHITE);
+            break;
+        case 5:
+            break;
+        case 6:
+            break;
+        default:
+            break;
+    }
+    display.display();
 }
