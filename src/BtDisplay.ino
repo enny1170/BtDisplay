@@ -56,34 +56,7 @@ void setup()
     Serial.println();
     Serial.print("Connecting to ");
     Serial.println(ssid);
-
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setTextWrap(true);
-    display.setCursor(0,0);
-    display.print("Connecting to ");
-    display.print(ssid);
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-        display.print(".");
-        display.display();
-    }
-
-    Serial.println("");
-    display.clearDisplay();
-    display.setCursor(0,2);
-    display.println("WiFi connected");
-    Serial.println("WiFi connected");
-    display.println("Ip address:");
-    Serial.println("IP address: ");
-    display.println(WiFi.localIP());
-    Serial.println(WiFi.localIP());
-    display.display();
-    delay(3000);
+    connectWiFi();
     //display.setTextSize(1);
     display.clearDisplay();
     display.setTextColor(WHITE);
@@ -94,7 +67,10 @@ void setup()
 void loop()
 {
 
-
+    if(WiFi.isConnected()==false)
+    {
+        connectWiFi();
+    }
 
     // Use WiFiClient class to create TCP connections
     WiFiClient client;
@@ -114,8 +90,11 @@ void loop()
     {
         Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
         display.clearDisplay();
+        display.setTextSize(1);
         display.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
         display.display();
+        delay(30000);
+        return;
     }
 
     http.end();
@@ -151,6 +130,7 @@ float cals0_intercept = cals0["intercept"]; // -18801.45209007935
     // Wtite out Data to display
     display.clearDisplay();
     display.setTextSize(4);
+    if(bgs0_sgv)
     display.setCursor(2,2);
     display.print(bgs0_sgv);
     drawArrow(bgs0_trend);
@@ -161,27 +141,78 @@ float cals0_intercept = cals0["intercept"]; // -18801.45209007935
 
 void drawArrow(int trend)
 {
-    
+    trend=3;
     switch (trend)
     {
-        case 2:
+        case 0: //NONE
             break;
-        case 3: 
+        case 1: //DOUBLE_UP
+            break;
+        case 2: //SINGLE_UP
+            display.drawLine(88,16,88,2,WHITE);
+            display.drawLine(88,2,78,14,WHITE);
+            display.drawLine(88,2,98,12,WHITE);
+            break;
+        case 3: //UP_45
+            display.drawLine(88,16,118,4,WHITE);
+            display.drawLine(118,4,103,4,WHITE);
+            display.drawLine(118,4,118,9,WHITE);
+            break;
+        case 4: //FLAT
             display.drawLine(88,16,123,16,WHITE);
             display.drawLine(123,16,113,11,WHITE);
             display.drawLine(123,16,113,21,WHITE);
             break;
-        case 4: //flat
-            display.drawLine(88,16,123,16,WHITE);
-            display.drawLine(123,16,113,11,WHITE);
-            display.drawLine(123,16,113,21,WHITE);
+        case 5: //DOWN_45
+            display.drawLine(88,16,118,28,WHITE);
+            display.drawLine(118,28,108,28,WHITE);
+            display.drawLine(118,28,118,24,WHITE);
             break;
-        case 5:
+        case 6: //SINGLE_DOWN
+            display.drawLine(88,16,88,30,WHITE);
+            display.drawLine(88,30,78,20,WHITE);
+            display.drawLine(88,30,98,20,WHITE);        
             break;
-        case 6:
+        case 7: //DOUBLE_DOWN
+            break;
+        case 8: //NOT_COMPUTABLE
+            break;
+        case 9: //OUT_OF_RANGE
             break;
         default:
             break;
     }
     display.display();
+}
+
+void connectWiFi(void)
+{
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setTextWrap(true);
+    display.setCursor(0,0);
+    display.print("Connecting to ");
+    display.print(ssid);
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+        display.print(".");
+        display.display();
+    }
+
+    Serial.println("");
+    display.clearDisplay();
+    display.setCursor(0,2);
+    display.println("WiFi connected");
+    Serial.println("WiFi connected");
+    display.println("Ip address:");
+    Serial.println("IP address: ");
+    display.println(WiFi.localIP());
+    Serial.println(WiFi.localIP());
+    display.display();
+    delay(3000);
+
 }
