@@ -64,7 +64,11 @@ void setup()
     #else
         Wire.begin();
     #endif
-
+    #ifdef DISPLAY_RST_PIN
+        digitalWrite(DISPLAY_RST_PIN,LOW);
+        delay(10);
+        digitalWrite(DISPLAY_RST_PIN,HIGH);
+    #endif
     display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
 
     // Clear the buffer.
