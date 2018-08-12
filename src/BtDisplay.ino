@@ -13,7 +13,10 @@ const char* url = "http://192.168.43.1:17580/pebble";
 const size_t bufferSize = 3*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(10) + 250;
 DynamicJsonBuffer jsonBuffer(bufferSize);
 
-//DynamicJsonBuffer jsonBuffer;
+// Display definitions
+#define DISPLAY_ADDRESS 0x3C
+#define DISPLAY_WIDTH 128
+#define DISPLAY_HIGHT 32
 
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
@@ -42,12 +45,12 @@ int size=1;
 void setup()
 {
     Serial.begin(115200);
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
 
     // Clear the buffer.
     display.clearDisplay();
 
-    display.drawBitmap(30, 16,  logo16_glcd_bmp, 16, 16, 1);
+    display.drawBitmap(30, 16, logo16_glcd_bmp, 16, 16, 1);
     display.display();
     delay(3);
     // We start by connecting to a WiFi network
@@ -60,22 +63,20 @@ void setup()
     //display.setTextSize(1);
     display.clearDisplay();
     display.setTextColor(WHITE);
-    display.setCursor(0,0);
+    display.setCursor(0, 0);
 }
-
 
 void loop()
 {
 
-    if(WiFi.isConnected()==false)
+    if (WiFi.isConnected() == false)
     {
         connectWiFi();
     }
 
-    // Use WiFiClient class to create TCP connections
-    WiFiClient client;
+    // create HTTP Client
     HTTPClient http;
-    // get data from Webservice    
+    // get data from Webservice
     http.begin(url);
     int httpCode = http.GET();
     if (httpCode > 0)
@@ -99,26 +100,28 @@ void loop()
 
     http.end();
 
-JsonObject &root = jsonBuffer.parseObject(line.c_str());
-//root.prettyPrintTo(Serial);
-long status0_now = root["status"][0]["now"]; // 1533992301941
+    // create Json Buffer for parsing results
+    JsonObject &root = jsonBuffer.parseObject(line.c_str());
+    //root.prettyPrintTo(Serial);
+    long status0_now = root["status"][0]["now"]; // 1533992301941
 
-JsonObject& bgs0 = root["bgs"][0];
-const char* bgs0_sgv = bgs0["sgv"]; // "149"
-int bgs0_trend = bgs0["trend"]; // 4
-const char* bgs0_direction = bgs0["direction"]; // "Flat"
-long bgs0_datetime = bgs0["datetime"]; // 1533992094001
-long bgs0_filtered = bgs0["filtered"]; // 116235
-long bgs0_unfiltered = bgs0["unfiltered"]; // 116235
-int bgs0_noise = bgs0["noise"]; // 1
-int bgs0_bgdelta = bgs0["bgdelta"]; // 1
-const char* bgs0_battery = bgs0["battery"]; // "70"
-int bgs0_iob = bgs0["iob"]; // 0
+    JsonObject &bgs0 = root["bgs"][0];
+    const char *bgs0_sgv = bgs0["sgv"];             // "149"
+    int bgs0_trend = bgs0["trend"];                 // 4
+    const char *bgs0_direction = bgs0["direction"]; // "Flat"
+    long bgs0_datetime = bgs0["datetime"];          // 1533992094001
+    long bgs0_filtered = bgs0["filtered"];          // 116235
+    long bgs0_unfiltered = bgs0["unfiltered"];      // 116235
+    int bgs0_noise = bgs0["noise"];                 // 1
+    int bgs0_bgdelta = bgs0["bgdelta"];             // 1
+    const char *bgs0_battery = bgs0["battery"];     // "70"
+    int bgs0_iob = bgs0["iob"];                     // 0
 
-JsonObject& cals0 = root["cals"][0];
-int cals0_scale = cals0["scale"]; // 1
-float cals0_slope = cals0["slope"]; // 1441.0746430702911
-float cals0_intercept = cals0["intercept"]; // -18801.45209007935
+    JsonObject &cals0 = root["cals"][0];
+    int cals0_scale = cals0["scale"];           // 1
+    float cals0_slope = cals0["slope"];         // 1441.0746430702911
+    float cals0_intercept = cals0["intercept"]; // -18801.45209007935
+    // write out Debug Values
     Serial.println("Json results:");
     Serial.print("sgv: ");
     Serial.println(bgs0_sgv);
@@ -131,21 +134,20 @@ float cals0_intercept = cals0["intercept"]; // -18801.45209007935
     display.clearDisplay();
     display.setTextSize(4);
     // set Offset for Values smaller than 100
-    int sgvValue=atoi(bgs0_sgv);
-    if(sgvValue>99)
+    int sgvValue = atoi(bgs0_sgv);
+    if (sgvValue > 99)
     {
-        display.setCursor(2,2);
+        display.setCursor(2, 2);
     }
     else
     {
-        display.setCursor(15,2);
+        display.setCursor(15, 2);
     }
     display.print(bgs0_sgv);
     drawArrow(bgs0_trend);
-
+    // Wait 30 sec
     delay(30000);
 }
-
 
 void drawArrow(int trend)
 {
