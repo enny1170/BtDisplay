@@ -17,9 +17,16 @@ DynamicJsonBuffer jsonBuffer(bufferSize);
 #define DISPLAY_ADDRESS 0x3C
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HIGHT 32
+#define DISPLAY_SCL_PIN 15
+#define DISPLAY_SDA_PIN 4
+#define DISPLAY_RST_PIN 16
+
+#ifdef DISPLAY_RST_PIN
+    #define OLED_RESET DISPLAY_RST_PIN
+#endif
 
 // Helper to find Display Address, comment it in to do a I2C Scan
-#define DO_I2C_SCAN
+// #define DO_I2C_SCAN
 
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
@@ -50,6 +57,14 @@ extern void I2CScanner();
 void setup()
 {
     Serial.begin(115200);
+    #ifdef DISPLAY_SCL_PIN
+        // if you use the Display with nos standard I2C Pins, you have to comment out the Wire.begin() in the Adafruit_SSD1306.cpp
+        // or use this patched version 
+        Wire.begin(DISPLAY_SDA_PIN,DISPLAY_SCL_PIN);
+    #else
+        Wire.begin();
+    #endif
+
     display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
 
     // Clear the buffer.
