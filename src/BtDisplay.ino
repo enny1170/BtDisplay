@@ -127,11 +127,19 @@ float cals0_intercept = cals0["intercept"]; // -18801.45209007935
     Serial.print("direction: ");
     Serial.println(bgs0_direction);
 
-    // Wtite out Data to display
+    // Write out Data to display
     display.clearDisplay();
     display.setTextSize(4);
-    if(bgs0_sgv)
-    display.setCursor(2,2);
+    // set Offset for Values smaller than 100
+    int sgvValue=atoi(bgs0_sgv);
+    if(sgvValue>99)
+    {
+        display.setCursor(2,2);
+    }
+    else
+    {
+        display.setCursor(15,2);
+    }
     display.print(bgs0_sgv);
     drawArrow(bgs0_trend);
 
