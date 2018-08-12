@@ -58,8 +58,8 @@ void setup()
 {
     Serial.begin(115200);
     #ifdef DISPLAY_SCL_PIN
-        // if you use the Display with nos standard I2C Pins, you have to comment out the Wire.begin() in the Adafruit_SSD1306.cpp
-        // or use this patched version 
+        // if you use the Display with nos standard I2C Pins, you have to comment out the Wire.begin() 
+        // in the Adafruit_SSD1306.cpp Line 209 or use this patched version 
         Wire.begin(DISPLAY_SDA_PIN,DISPLAY_SCL_PIN);
     #else
         Wire.begin();
