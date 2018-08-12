@@ -18,6 +18,9 @@ DynamicJsonBuffer jsonBuffer(bufferSize);
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HIGHT 32
 
+// Helper to find Display Address, comment it in to do a I2C Scan
+#define DO_I2C_SCAN
+
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
 static const unsigned char PROGMEM logo16_glcd_bmp[] =
@@ -42,6 +45,8 @@ Adafruit_SSD1306 display;
 String line;
 int size=1;
 
+extern void I2CScanner();
+
 void setup()
 {
     Serial.begin(115200);
@@ -64,6 +69,12 @@ void setup()
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
+
+    #ifdef DO_I2C_SCAN
+        Serial.println("----------------------------------------------------------------------------------------");
+        I2CScanner();
+        Serial.println("----------------------------------------------------------------------------------------");
+    #endif
 }
 
 void loop()
