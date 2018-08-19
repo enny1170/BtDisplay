@@ -5,12 +5,13 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-//jro
-//#include <stdint.h>
-//
+
 const char* ssid     = "myMobile";
 const char* password = "VollVergessen!DenScheiss!";
 const char* url = "http://192.168.43.1:17580/pebble";
+
+static const int timewarning1 = 6; // display timeago after this count of minutes
+static const int timewarning2 = 10; // display timeago and crossed out BG after this count of minutes
 
 const size_t bufferSize = 3*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(10) + 250;
 DynamicJsonBuffer jsonBuffer(bufferSize);
@@ -154,7 +155,7 @@ static const unsigned char PROGMEM imgDblDown[64] =
 
 Adafruit_SSD1306 display(OLED_RESET);
 String line;
-int size=1;
+//int size=1;
 
 //extern void I2CScanner();
 
@@ -314,17 +315,31 @@ void loop()
 
     // Write out Data to display
     display.clearDisplay();
+    int olddata = 0;
+    int timeago = (int)((status0_now - bgs0_datetime) / 1000 /60);
+
     display.setTextSize(4);
+    
+    if ( timeago >= timewarning2)
+    {   olddata = 2;
+        display.setTextSize(3);
+    }
+    else if (timeago >= timewarning1)
+    {
+        olddata = 1;
+        display.setTextSize(3);
+    }
 
     // set Offset for Values smaller than 100
     int sgvValue = atoi(bgs0_sgv);
+    int offset;
     if (sgvValue > 99)
-    {
-        display.setCursor(2, 2);
+    {   offset = 0;
+        display.setCursor(2 + offset , 2);
     }
     else
-    {
-        display.setCursor(21, 2);
+    {   offset = 19;
+        display.setCursor(2 + offset, 2);
     }
 
     if (sgvValue < 90)
@@ -337,6 +352,20 @@ void loop()
     }
 
     display.print(bgs0_sgv);
+
+if (olddata > 0)
+{   display.setTextSize(1);
+    display.setCursor(2, 24);
+    display.print("-- ");
+    display.print(((long)(status0_now - bgs0_datetime) / 1000 /60));
+    display.println(" min --");
+}
+if (olddata > 1)
+{   
+    //display.drawLine(0,12,64,12,WHITE);
+    display.drawLine(0 + offset,13,58,13,WHITE);
+    display.drawLine(0 + offset,14,58,14,WHITE);
+}
 
     display.setTextSize(2);
     display.setCursor(88,16);
@@ -444,4 +473,5 @@ void connectWiFi(void)
     display.println(WiFi.gatewayIP());
     display.display();
     delay(2000);
+
 }
