@@ -5,7 +5,9 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
+//jro
+//#include <stdint.h>
+//
 const char* ssid     = "myMobile";
 const char* password = "VollVergessen!DenScheiss!";
 const char* url = "http://192.168.43.1:17580/pebble";
@@ -20,6 +22,7 @@ DynamicJsonBuffer jsonBuffer(bufferSize);
 #define DISPLAY_SCL_PIN 15
 #define DISPLAY_SDA_PIN 4
 #define DISPLAY_RST_PIN 16
+#define SSD1306_128_64
 
 #ifdef DISPLAY_RST_PIN
     #define OLED_RESET DISPLAY_RST_PIN
@@ -28,31 +31,132 @@ DynamicJsonBuffer jsonBuffer(bufferSize);
 // Helper to find Display Address, comment it in to do a I2C Scan
 // #define DO_I2C_SCAN
 
-#define LOGO16_GLCD_HEIGHT 16 
-#define LOGO16_GLCD_WIDTH  16 
-static const unsigned char PROGMEM logo16_glcd_bmp[] =
-{ B00000000, B11000000,
-  B00000001, B11000000,
-  B00000001, B11000000,
-  B00000011, B11100000,
-  B11110011, B11100000,
-  B11111110, B11111000,
-  B01111110, B11111111,
-  B00110011, B10011111,
-  B00011111, B11111100,
-  B00001101, B01110000,
-  B00011011, B10100000,
-  B00111111, B11100000,
-  B00111111, B11110000,
-  B01111100, B11110000,
-  B01110000, B01110000,
-  B00000000, B00110000 };
+// arrow bitmaps
+static const unsigned char PROGMEM imgDblUp[64] =
+  { 0x00, 0x40, 0x02, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x01, 0xf0, 0x0f, 0x80, 
+    0x03, 0xf8, 0x1f, 0xc0, 
+    0x07, 0xfc, 0x3f, 0xe0, 
+    0x0e, 0xee, 0x77, 0x70, 
+    0x0c, 0xe6, 0x67, 0x30, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
+static const unsigned char PROGMEM imgUp[64] =
+  { 0x00, 0x00, 0x02, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x0f, 0x80, 
+    0x00, 0x00, 0x1f, 0xc0, 
+    0x00, 0x00, 0x3f, 0xe0, 
+    0x00, 0x00, 0x77, 0x70, 
+    0x00, 0x00, 0x67, 0x30, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
+static const unsigned char PROGMEM imgUp45[64] =
+  { 0x00, 0x00, 0xff, 0xff, 
+    0x00, 0x00, 0xff, 0xff, 
+    0x00, 0x00, 0x01, 0xff, 
+    0x00, 0x00, 0x07, 0xff, 
+    0x00, 0x00, 0x1f, 0xff, 
+    0x00, 0x00, 0x7f, 0x8f, 
+    0x00, 0x01, 0xfe, 0x0f, 
+    0x00, 0x07, 0xf8, 0x0f, 
+    0x00, 0x1f, 0xe0, 0x00, 
+    0x00, 0x7f, 0x80, 0x00, 
+    0x01, 0xfe, 0x00, 0x00, 
+    0x07, 0xf8, 0x00, 0x00, 
+    0x0f, 0xe0, 0x00, 0x00, 
+    0x0f, 0x80, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
+static const unsigned char PROGMEM imgFlat[64] =
+  { 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0xff, 0x00, 
+    0x00, 0x00, 0xff, 0xc0, 
+    0x00, 0x00, 0x0f, 0xf0, 
+    0x00, 0x00, 0x03, 0xfc, 
+    0xff, 0xff, 0xff, 0xff, 
+    0xff, 0xff, 0xff, 0xff, 
+    0xff, 0xff, 0xff, 0xff, 
+    0x00, 0x00, 0x03, 0xfc, 
+    0x00, 0x00, 0x0f, 0xf0, 
+    0x00, 0x00, 0xff, 0xc0, 
+    0x00, 0x00, 0xff, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
+static const unsigned char PROGMEM imgDown45[64] =
+  { 0x0f, 0x80, 0x00, 0x00, 
+    0x0f, 0xe0, 0x00, 0x00, 
+    0x07, 0xf8, 0x00, 0x00, 
+    0x01, 0xfe, 0x00, 0x00, 
+    0x00, 0x7f, 0x80, 0x00, 
+    0x00, 0x1f, 0xe0, 0x00, 
+    0x00, 0x07, 0xf8, 0x0f, 
+    0x00, 0x01, 0xfe, 0x0f, 
+    0x00, 0x00, 0x7f, 0x8f, 
+    0x00, 0x00, 0x1f, 0xff, 
+    0x00, 0x00, 0x07, 0xff, 
+    0x00, 0x00, 0x01, 0xff, 
+    0x00, 0x00, 0xff, 0xff, 
+    0x00, 0x00, 0xff, 0xff, 
+    0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
+static const unsigned char PROGMEM imgDown[64] =
+  { 0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x67, 0x30, 
+    0x00, 0x00, 0x77, 0x70, 
+    0x00, 0x00, 0x3f, 0xe0, 
+    0x00, 0x00, 0x1f, 0xc0, 
+    0x00, 0x00, 0x0f, 0x80, 
+    0x00, 0x00, 0x07, 0x00, 
+    0x00, 0x00, 0x02, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
+static const unsigned char PROGMEM imgDblDown[64] =
+  { 0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x0c, 0xe6, 0x67, 0x30, 
+    0x0e, 0xee, 0x77, 0x70, 
+    0x07, 0xfc, 0x3f, 0xe0, 
+    0x03, 0xf8, 0x1f, 0xc0, 
+    0x01, 0xf0, 0x0f, 0x80, 
+    0x00, 0xe0, 0x07, 0x00, 
+    0x00, 0x40, 0x02, 0x00, 
+    0x00, 0x00, 0x00, 0x00};
 
-Adafruit_SSD1306 display;
+Adafruit_SSD1306 display(OLED_RESET);
 String line;
 int size=1;
 
-extern void I2CScanner();
+//extern void I2CScanner();
 
 void setup()
 {
@@ -64,27 +168,68 @@ void setup()
     #else
         Wire.begin();
     #endif
-    #ifdef DISPLAY_RST_PIN
+/*     #ifdef DISPLAY_RST_PIN
         digitalWrite(DISPLAY_RST_PIN,LOW);
         delay(10);
         digitalWrite(DISPLAY_RST_PIN,HIGH);
-    #endif
+    #endif */
     display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
 
     // Clear the buffer.
     display.clearDisplay();
 
-    display.drawBitmap(30, 16, logo16_glcd_bmp, 16, 16, 1);
-    display.display();
-    delay(3);
-    // We start by connecting to a WiFi network
 
-    Serial.println();
-    Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
-    connectWiFi();
-    //display.setTextSize(1);
+    // int iDelay;
+    // int iw;
+    // int ih;
+    // iDelay = 2000;
+    // iw=32;
+    // ih=16;
+
+    // display.drawBitmap(96,0,imgDblUp,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+
+    // display.drawBitmap(96,0,imgDblDown,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+    
+    // display.drawBitmap(96,0,imgUp45,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+    
+    // display.drawBitmap(96,0,imgDown45,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+    
+    // display.drawBitmap(96,0,imgUp,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+    
+    // display.drawBitmap(96,0,imgDown,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+    
+    // display.drawBitmap(96,0,imgFlat,iw,ih,1);
+    // display.display();
+    // delay(iDelay);
+    // display.clearDisplay();
+
+    // We start by connecting to a WiFi network
+    
+    // debug output
+    // Serial.println();
+    // Serial.println();
+    // Serial.print("Connecting to ");
+    // Serial.println(ssid);
+    
+    // init display
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
@@ -94,18 +239,23 @@ void setup()
         I2CScanner();
         Serial.println("----------------------------------------------------------------------------------------");
     #endif
+
+        // start with WiFi connection
+    connectWiFi();
+
 }
 
 void loop()
 {
 
     if (WiFi.isConnected() == false)
-    {
+    {   
         connectWiFi();
     }
 
     // create HTTP Client
     HTTPClient http;
+
     // get data from Webservice
     http.begin(url);
     int httpCode = http.GET();
@@ -118,10 +268,11 @@ void loop()
         }
     }
     else
-    {
-        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    {   Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
         display.clearDisplay();
         display.setTextSize(1);
+        display.setTextWrap(true);
+        display.setCursor(0,0);
         display.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
         display.display();
         delay(30000);
@@ -143,7 +294,8 @@ void loop()
     long bgs0_filtered = bgs0["filtered"];          // 116235
     long bgs0_unfiltered = bgs0["unfiltered"];      // 116235
     int bgs0_noise = bgs0["noise"];                 // 1
-    int bgs0_bgdelta = bgs0["bgdelta"];             // 1
+    //int bgs0_bgdelta = bgs0["bgdelta"];             // 1
+    signed int bgs0_bgdelta = bgs0["bgdelta"];             // 1
     const char *bgs0_battery = bgs0["battery"];     // "70"
     int bgs0_iob = bgs0["iob"];                     // 0
 
@@ -151,18 +303,19 @@ void loop()
     int cals0_scale = cals0["scale"];           // 1
     float cals0_slope = cals0["slope"];         // 1441.0746430702911
     float cals0_intercept = cals0["intercept"]; // -18801.45209007935
-    // write out Debug Values
-    Serial.println("Json results:");
-    Serial.print("sgv: ");
-    Serial.println(bgs0_sgv);
-    Serial.print("trend: ");
-    Serial.println(bgs0_trend);
-    Serial.print("direction: ");
-    Serial.println(bgs0_direction);
+    // // write out Debug Values
+    // Serial.println("Json results:");
+    // Serial.print("sgv: ");
+    // Serial.println(bgs0_sgv);
+    // Serial.print("trend: ");
+    // Serial.println(bgs0_trend);
+    // Serial.print("direction: ");
+    // Serial.println(bgs0_direction);
 
     // Write out Data to display
     display.clearDisplay();
     display.setTextSize(4);
+
     // set Offset for Values smaller than 100
     int sgvValue = atoi(bgs0_sgv);
     if (sgvValue > 99)
@@ -171,49 +324,66 @@ void loop()
     }
     else
     {
-        display.setCursor(15, 2);
+        display.setCursor(21, 2);
     }
+
+    if (sgvValue < 90)
+    {
+        display.invertDisplay(5);
+    }
+    else
+    {
+        display.invertDisplay(0);
+    }
+
     display.print(bgs0_sgv);
+
+    display.setTextSize(2);
+    display.setCursor(88,16);
+
+    if(bgs0_bgdelta > 0)
+    {
+        display.print("+");
+        display.print(bgs0_bgdelta);
+    }
+    else 
+    {
+        display.print(bgs0_bgdelta);
+    }
+    
     drawArrow(bgs0_trend);
-    // Wait 30 sec
-    delay(30000);
+    
+    // Wait 15 sec before polling the next BG
+    delay(15000);
 }
 
 void drawArrow(int trend)
 {
-    trend=3;
+    //trend=4;
     switch (trend)
     {
         case 0: //NONE
             break;
         case 1: //DOUBLE_UP
+            display.drawBitmap(96,0,imgDblUp,32,16,1);
             break;
         case 2: //SINGLE_UP
-            display.drawLine(88,16,88,2,WHITE);
-            display.drawLine(88,2,78,14,WHITE);
-            display.drawLine(88,2,98,12,WHITE);
+            display.drawBitmap(96,0,imgUp,32,16,1);
             break;
         case 3: //UP_45
-            display.drawLine(88,16,118,4,WHITE);
-            display.drawLine(118,4,103,4,WHITE);
-            display.drawLine(118,4,118,9,WHITE);
+            display.drawBitmap(96,0,imgUp45,32,16,1);
             break;
         case 4: //FLAT
-            display.drawLine(88,16,123,16,WHITE);
-            display.drawLine(123,16,113,11,WHITE);
-            display.drawLine(123,16,113,21,WHITE);
+            display.drawBitmap(96,0,imgFlat,32,16,1);
             break;
         case 5: //DOWN_45
-            display.drawLine(88,16,118,28,WHITE);
-            display.drawLine(118,28,108,28,WHITE);
-            display.drawLine(118,28,118,24,WHITE);
+            display.drawBitmap(96,0,imgDown45,32,16,1);
             break;
         case 6: //SINGLE_DOWN
-            display.drawLine(88,16,88,30,WHITE);
-            display.drawLine(88,30,78,20,WHITE);
-            display.drawLine(88,30,98,20,WHITE);        
+            display.drawBitmap(96,0,imgDown,32,16,1);      
             break;
         case 7: //DOUBLE_DOWN
+            display.drawBitmap(96,0,imgDblDown,32,16,1);
             break;
         case 8: //NOT_COMPUTABLE
             break;
@@ -226,33 +396,52 @@ void drawArrow(int trend)
 }
 
 void connectWiFi(void)
-{
+{   int i;
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.setTextWrap(true);
+    //display.setTextWrap(true);
     display.setCursor(0,0);
-    display.print("Connecting to ");
-    display.print(ssid);
+    //display.print("Connecting to ");
+    //display.print(ssid);
+    display.display();
+    //jro
+        // try to solve WiFi connect Error
+        WiFi.setAutoConnect(1);
+    //jro
     WiFi.begin(ssid, password);
+    display.setCursor(0,0);
+    display.println("Connecting to ");
+    display.print(ssid);
+    display.display();
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        Serial.print(".");
+       // Serial.print(".");
         display.print(".");
         display.display();
+        //jro
+        // sometimes WiFi was not connecting
+            i ++;
+            if (i > 4)
+            {
+                WiFi.reconnect();
+            i = 0;}
+        //jro
     }
 
-    Serial.println("");
+    // Serial.println("");
+    //delay(500);
     display.clearDisplay();
     display.setCursor(0,2);
     display.println("WiFi connected");
-    Serial.println("WiFi connected");
-    display.println("Ip address:");
+    //Serial.println("WiFi connected");
+    display.print("IP: ");
     Serial.println("IP address: ");
     display.println(WiFi.localIP());
     Serial.println(WiFi.localIP());
+    display.print("GW: ");
+    display.println(WiFi.gatewayIP());
     display.display();
-    delay(3000);
-
+    delay(2000);
 }
