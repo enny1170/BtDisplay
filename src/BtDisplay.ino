@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Wire.h>
 #include "images.h"
 
 //#define DEBUG
@@ -19,6 +20,8 @@ DynamicJsonBuffer jsonBuffer(bufferSize);
 
 // Display definitions
 #define DISPLAY_ADDRESS 0x3C
+#define DISPLAY_SCL_PIN 15
+#define DISPLAY_SDA_PIN 4
 #define DISPLAY_RST_PIN 16
 #define SSD1306_128_64
 
@@ -33,6 +36,7 @@ void setup() {
     #ifdef DEBUG
       Serial.begin(115200);
     #endif
+    Wire.begin(DISPLAY_SDA_PIN,DISPLAY_SCL_PIN);
     display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
 
     // Clear the buffer.
@@ -144,13 +148,13 @@ void loop() {
 
     display.print(bgs0_sgv);
 
-    if (olddata > 0 && olddata < 1) {
+    if (olddata == 1) {
         display.setTextSize(1);
         display.setCursor(2, 24);
         display.print("-- ");
         display.print(((long)(status0_now - bgs0_datetime) / 1000 /60));
         display.println(" min --");
-    } else {
+    } else if (olddata ==2) {
         //display.drawLine(0,12,64,12,WHITE);
         display.drawLine(0 + offset,13,58,13,WHITE);
         display.drawLine(0 + offset,14,58,14,WHITE);
