@@ -5,6 +5,8 @@
 #include <Adafruit_SSD1306.h>
 #include "images.h"
 
+//#define DEBUG
+
 const char* ssid     = "myMobile";
 const char* password = "VollVergessen!DenScheiss!";
 const char* url = "http://192.168.43.1:17580/pebble";
@@ -29,7 +31,9 @@ String line;
 
 void setup()
 {
-    Serial.begin(115200);
+    #ifdef DEBUG
+      Serial.begin(115200);
+    #endif
     display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_ADDRESS);
 
     // Clear the buffer.
@@ -67,7 +71,10 @@ void loop()
         }
     }
     else
-    {   Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    {
+        #ifdef DEBUG
+          Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        #endif
         display.clearDisplay();
         display.setTextSize(1);
         display.setTextWrap(true);
@@ -82,7 +89,6 @@ void loop()
 
     // create Json Buffer for parsing results
     JsonObject &root = jsonBuffer.parseObject(line.c_str());
-    //root.prettyPrintTo(Serial);
     long status0_now = root["status"][0]["now"]; // 1533992301941
 
     JsonObject &bgs0 = root["bgs"][0];
@@ -102,14 +108,16 @@ void loop()
     int cals0_scale = cals0["scale"];           // 1
     float cals0_slope = cals0["slope"];         // 1441.0746430702911
     float cals0_intercept = cals0["intercept"]; // -18801.45209007935
-    // // write out Debug Values
-    // Serial.println("Json results:");
-    // Serial.print("sgv: ");
-    // Serial.println(bgs0_sgv);
-    // Serial.print("trend: ");
-    // Serial.println(bgs0_trend);
-    // Serial.print("direction: ");
-    // Serial.println(bgs0_direction);
+    #ifdef DEBUG
+      //  write out Debug Values
+      Serial.println("Json results:");
+      Serial.print("sgv: ");
+      Serial.println(bgs0_sgv);
+      Serial.print("trend: ");
+      Serial.println(bgs0_trend);
+      Serial.print("direction: ");
+      Serial.println(bgs0_direction);
+    #endif
 
     // Write out Data to display
     display.clearDisplay();
@@ -244,7 +252,6 @@ void connectWiFi(void)
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-       // Serial.print(".");
         display.print(".");
         display.display();
         //jro
@@ -257,16 +264,21 @@ void connectWiFi(void)
         //jro
     }
 
-    // Serial.println("");
     //delay(500);
     display.clearDisplay();
     display.setCursor(0,2);
     display.println("WiFi connected");
-    //Serial.println("WiFi connected");
+    #ifdef DEBUG
+        Serial.println("WiFi connected");
+    #endif
     display.print("IP: ");
-    Serial.println("IP address: ");
+    #ifdef DEBUG
+        Serial.println("IP address: ");
+    #endif
     display.println(WiFi.localIP());
-    Serial.println(WiFi.localIP());
+    #ifdef DEBUG
+        Serial.println(WiFi.localIP());
+    #endif
     display.print("GW: ");
     display.println(WiFi.gatewayIP());
     display.display();
