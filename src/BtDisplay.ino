@@ -8,11 +8,13 @@
 
 //#define DEBUG
 
-const char* version ="2022-12-20";
+const char* version ="2022-12-22";
 
 // change to your values
 const char* ssid     = "myMobile";
 const char* password = "VollVergessen!DenScheiss!";
+const char* sourceurl = "Gateway";
+//const char* sourceurl = "http://192.168.43.1:17580/pebble";
 // end change to your values
 
 static const int timewarning1 = 6; // display timeago after this count of minutes
@@ -63,7 +65,12 @@ void loop() {
     HTTPClient http;
 
     // get data from Webservice
-    String url = "http://" + WiFi.gatewayIP().toString() + ":17580/pebble";
+    String url = "";
+    if (sourceurl == "Gateway") {
+        url = "http://" + WiFi.gatewayIP().toString() + ":17580/pebble";
+        } else {
+            url = sourceurl;
+        }
     http.begin(url);
     int httpCode = http.GET();
     if (httpCode > 0) {
