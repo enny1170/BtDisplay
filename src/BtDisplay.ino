@@ -8,15 +8,20 @@
 
 //#define DEBUG
 
+const char* version ="2022-12-22";
+
+// change to your values
 const char* ssid     = "myMobile";
 const char* password = "VollVergessen!DenScheiss!";
-const char* url = "http://192.168.43.1:17580/pebble";
+const char* sourceurl = "Gateway";
+//const char* sourceurl = "http://192.168.43.1:17580/pebble";
+// end change to your values
 
 static const int timewarning1 = 6; // display timeago after this count of minutes
 static const int timewarning2 = 10; // display timeago and crossed out BG after this count of minutes
 
 const size_t bufferSize = 3*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(10) + 250;
-DynamicJsonBuffer jsonBuffer(bufferSize);
+DynamicJsonDocument jsonBuffer(bufferSize);
 
 // Display definitions
 #define DISPLAY_ADDRESS 0x3C
@@ -60,6 +65,12 @@ void loop() {
     HTTPClient http;
 
     // get data from Webservice
+    String url = "";
+    if (sourceurl == "Gateway") {
+        url = "http://" + WiFi.gatewayIP().toString() + ":17580/pebble";
+        } else {
+            url = sourceurl;
+        }
     http.begin(url);
     int httpCode = http.GET();
     if (httpCode > 0) {
@@ -83,26 +94,26 @@ void loop() {
 
     http.end();
 
-    // create Json Buffer for parsing results
-    JsonObject &root = jsonBuffer.parseObject(line.c_str());
-    long status0_now = root["status"][0]["now"]; // 1533992301941
-
-    JsonObject &bgs0 = root["bgs"][0];
-    const char *bgs0_sgv = bgs0["sgv"];             // "149"
-    int bgs0_trend = bgs0["trend"];                 // 4
-    const char *bgs0_direction = bgs0["direction"]; // "Flat"
-    long bgs0_datetime = bgs0["datetime"];          // 1533992094001
-    long bgs0_filtered = bgs0["filtered"];          // 116235
-    long bgs0_unfiltered = bgs0["unfiltered"];      // 116235
-    int bgs0_noise = bgs0["noise"];                 // 1
-    signed int bgs0_bgdelta = bgs0["bgdelta"];      // 1
-    const char *bgs0_battery = bgs0["battery"];     // "70"
-    int bgs0_iob = bgs0["iob"];                     // 0
-
-    JsonObject &cals0 = root["cals"][0];
-    int cals0_scale = cals0["scale"];               // 1
-    float cals0_slope = cals0["slope"];             // 1441.0746430702911
-    float cals0_intercept = cals0["intercept"];     // -18801.45209007935
+    // parsing Json for parsing results
+    /* {"status":[{"now":1671560486612}],
+    "bgs":[{"sgv":"108","trend":4,"direction":"Flat","datetime":1671560213264,"filtered":0,"unfiltered":-127,"noise":1,"bgdelta":-2,"battery":"","iob":0}],"cals":[{"scale":1,"slope":1000,"intercept":20000}]} */
+    
+    deserializeJson(jsonBuffer, line.c_str());
+    
+    long status0_now = jsonBuffer["status"][0]["now"]; // 1533992301941
+    const char *bgs0_sgv = jsonBuffer["bgs"][0]["sgv"];             // "149"
+    int bgs0_trend = jsonBuffer["bgs"][0]["trend"];                 // 4
+    const char *bgs0_direction = jsonBuffer["bgs"][0]["direction"]; // "Flat"
+    long bgs0_datetime = jsonBuffer["bgs"][0]["datetime"];          // 1533992094001
+    long bgs0_filtered = jsonBuffer["bgs"][0]["filtered"];          // 116235
+    long bgs0_unfiltered = jsonBuffer["bgs"][0]["unfiltered"];      // 116235
+    int bgs0_noise = jsonBuffer["bgs"][0]["noise"];                 // 1
+    signed int bgs0_bgdelta = jsonBuffer["bgs"][0]["bgdelta"];      // 1
+    const char *bgs0_battery = jsonBuffer["bgs"][0]["battery"];     // "70"
+    int bgs0_iob = jsonBuffer["bgs"][0]["iob"];                     // 0
+    int cals0_scale = jsonBuffer["cals"][0]["scale"];               // 1
+    float cals0_slope = jsonBuffer["cals"][0]["slope"];             // 1441.0746430702911
+    float cals0_intercept = jsonBuffer["cals"][0]["intercept"];     // -18801.45209007935
     #ifdef DEBUG
       //  write out Debug Values
       Serial.println("Json results:");
@@ -155,7 +166,6 @@ void loop() {
         display.print(((long)(status0_now - bgs0_datetime) / 1000 /60));
         display.println(" min --");
     } else if (olddata ==2) {
-        //display.drawLine(0,12,64,12,WHITE);
         display.drawLine(0 + offset,13,58,13,WHITE);
         display.drawLine(0 + offset,14,58,14,WHITE);
     }
@@ -223,6 +233,8 @@ void connectWiFi(void) {
     WiFi.begin(ssid, password);
 
     display.setCursor(0,0);
+    display.print("version: "); 
+    display.println(version);
     display.println("Connecting to ");
     display.print(ssid);
     display.display();

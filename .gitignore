@@ -331,3 +331,4 @@ ASALocalRun/
 .pioenvs
 .piolibdeps
 .vscode
+.pio
